@@ -1,0 +1,21 @@
+Creare Login (Auth):
+
+Invoke-RestMethod -Uri "http://localhost:8084/auth/register" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body '{"email": "admin@test.com", "password": "root"}'
+
+Creare Profil Admin (Users):
+
+Invoke-RestMethod -Uri "http://localhost:8084/people" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body '{"name": "System Administrator", "email": "admin@test.com", "age": 30, "role": "ADMIN"}'
+
+http://localhost:5173/
+
+http://localhost:8084/people
+
+http://localhost:8084/devices
+
+http://localhost:8084/actuator/health

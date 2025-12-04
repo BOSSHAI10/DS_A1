@@ -1,0 +1,52 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: api-gateway
+  main:
+    web-application-type: reactive
+  cloud:
+    gateway:
+      # Reguli de rutare (Routing)
+      routes:
+        # 1. Rută pentru Auth Service
+        - id: auth-service
+          uri: http://auth-service:8080
+          predicates:
+            - Path=/auth/**
+
+        # 2. Rută pentru Users Service
+        - id: users-service
+          uri: http://users-service:8081
+          predicates:
+            - Path=/people/**
+
+        # 3. Rută pentru Devices Service
+        - id: devices-service
+          uri: http://devices-service:8082
+          predicates:
+            - Path=/devices/**
+
+      # Configurare CORS globală (pentru React)
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "http://localhost:5173,http://localhost:3000"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+              - PATCH
+            allowedHeaders: "*"
+
+# Configurare Log-uri (te ajută să vezi rutele)
+logging:
+  level:
+    root: INFO
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.http.server.reactive: DEBUG
+    org.springframework.web.reactive: DEBUG
+    reactor.netty: INFO
