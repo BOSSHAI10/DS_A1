@@ -71,12 +71,23 @@ public class DeviceService {
         Device device = deviceRepository.findById(deviceId)
                 .orElseThrow(() -> new ResourceNotFoundException(Device.class.getSimpleName() + " with id: " + deviceId));
 
-        device.setUserId(null); // Ștergem legătura
+        device.setUserId(null);
         deviceRepository.save(device);
         LOGGER.debug("Device with id {} was unassigned", deviceId);
     }
 
     public void delete(UUID id) {
         deviceRepository.deleteById(id);
+    }
+
+    public DeviceDetailsDTO update(UUID id, DeviceDetailsDTO deviceDetailsDTO) {
+        Optional<Device> deviceOptional = deviceRepository.findById(id);
+        if (deviceOptional.isEmpty()) {
+            throw new ResourceNotFoundException(Device.class.getSimpleName() + " with id: " + id);
+        }
+        Device device = deviceOptional.get();
+        device.setName(deviceDetailsDTO.getName());
+        device.setConsumption(deviceDetailsDTO.getConsumption());
+        return DeviceBuilder.toDeviceDetailsDTO(deviceRepository.save(device));
     }
 }

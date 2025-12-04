@@ -67,4 +67,9 @@ public class DeviceController {
         deviceService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<DeviceDetailsDTO> update(@PathVariable UUID id, @Valid @RequestBody DeviceDetailsDTO dto) {
+        return ResponseEntity.ok(deviceService.update(id, dto));
+    }
 }
