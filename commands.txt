@@ -12,6 +12,14 @@ Invoke-RestMethod -Uri "http://localhost:8084/people" `
   -ContentType "application/json" `
   -Body '{"name": "System Administrator", "email": "admin@test.com", "age": 30, "role": "ADMIN"}'
 
+Create Device:
+
+Invoke-RestMethod -Uri "http://localhost:8084/devices" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body '{"name": "Smart Sensor X1", "consumption": 150, "active": true}'
+
+
 http://localhost:5173/
 
 http://localhost:8084/people
