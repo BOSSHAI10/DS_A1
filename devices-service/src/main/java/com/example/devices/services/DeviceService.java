@@ -65,4 +65,18 @@ public class DeviceService {
                 .map(DeviceBuilder::toDeviceDTO)
                 .collect(Collectors.toList());
     }
+
+    @Transactional
+    public void unassignUser(UUID deviceId) {
+        Device device = deviceRepository.findById(deviceId)
+                .orElseThrow(() -> new ResourceNotFoundException(Device.class.getSimpleName() + " with id: " + deviceId));
+
+        device.setUserId(null); // Ștergem legătura
+        deviceRepository.save(device);
+        LOGGER.debug("Device with id {} was unassigned", deviceId);
+    }
+
+    public void delete(UUID id) {
+        deviceRepository.deleteById(id);
+    }
 }

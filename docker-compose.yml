@@ -124,19 +124,16 @@ services:
       dockerfile: Dockerfile
     container_name: frontend
     ports:
-      - "5173:5173"  # Mapăm portul 5173 din container pe 5173 al calculatorului tău
+      - "5173:5173"
     environment:
-      - VITE_API_BASE_URL=http://localhost:8084/api
+      - CHOKIDAR_USEPOLLING=true
     networks:
       - demo_net
     depends_on:
-      - api-gateway  # Așteptăm să pornească gateway-ul înainte
-    # Această linie permite "Hot Reload" (modificările locale se văd instant în container)
-    # Dacă ai probleme cu permisiunile pe Windows, poți comenta linia 'volumes'
+      - api-gateway
     volumes:
       - ./frontend:/app
       - /app/node_modules
-
 networks:
   demo_net:
     driver: bridge

@@ -55,4 +55,16 @@ public class DeviceController {
     public ResponseEntity<List<DeviceDTO>> getDevicesByUser(@PathVariable UUID userId) {
         return ResponseEntity.ok(deviceService.findDevicesByUserId(userId));
     }
+
+    @PostMapping("/{id}/unassign")
+    public ResponseEntity<Void> unassignDevice(@PathVariable UUID id) {
+        deviceService.unassignUser(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        deviceService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
 }

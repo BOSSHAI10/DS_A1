@@ -8,13 +8,16 @@ public class DeviceDTO {
     private String name;
     private Integer consumption;
     private boolean active;
+    private UUID userId; // <--- CÂMPUL NOU CRITIC
 
     public DeviceDTO() {}
-    public DeviceDTO(UUID id, String name, Integer consumption, boolean active) {
+
+    public DeviceDTO(UUID id, String name, Integer consumption, boolean active, UUID userId) {
         this.id = id;
         this.name = name;
         this.consumption = consumption;
         this.active = active;
+        this.userId = userId;
     }
 
     public UUID getId() { return id; }
@@ -23,28 +26,30 @@ public class DeviceDTO {
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 
-    @Override public boolean equals(Object o) {
+    public int getConsumption() { return consumption; }
+    public void setConsumption(int consumption) { this.consumption = consumption; }
+
+    public boolean isActive() { return active; }
+    public void setActive(boolean active) { this.active = active; }
+
+    // Getters și Setters pentru userId
+    public UUID getUserId() { return userId; }
+    public void setUserId(UUID userId) { this.userId = userId; }
+
+    @Override
+    public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        DeviceDTO that = (DeviceDTO) o;
-        return Objects.equals(consumption, that.consumption) && Objects.equals(name, that.name);
-    }
-    @Override public int hashCode() { return Objects.hash(name, consumption); }
-
-
-    public int getConsumption() {
-        return consumption;
+        DeviceDTO deviceDTO = (DeviceDTO) o;
+        return active == deviceDTO.active &&
+                Objects.equals(id, deviceDTO.id) &&
+                Objects.equals(name, deviceDTO.name) &&
+                Objects.equals(consumption, deviceDTO.consumption) &&
+                Objects.equals(userId, deviceDTO.userId);
     }
 
-    public void setConsumption(int consumption) {
-        this.consumption = consumption;
-    }
-
-    public boolean isActive() {
-        return active;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, name, consumption, active, userId);
     }
 }

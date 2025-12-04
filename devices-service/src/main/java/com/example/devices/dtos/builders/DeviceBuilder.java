@@ -10,7 +10,8 @@ public class DeviceBuilder {
     }
 
     public static DeviceDTO toDeviceDTO(Device device) {
-        return new DeviceDTO(device.getId(), device.getName(), device.getConsumption(), device.isActive());
+        // AICI ADĂUGĂM device.getUserId() la final
+        return new DeviceDTO(device.getId(), device.getName(), device.getConsumption(), device.isActive(), device.getUserId());
     }
 
     public static DeviceDetailsDTO toDeviceDetailsDTO(Device device) {
