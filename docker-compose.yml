@@ -1,54 +1,83 @@
 version: '3.8'
 
 services:
-  # Baze de date
-  users-db:
-    image: postgres:16
-    container_name: users-db
+  # --- TRAEFIK ---
+  traefik:
+    # UPDATED: Folosim v2.11 care este mai stabilă pe Windows
+    image: traefik:v2.11
+    container_name: traefik
     restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: root
-      POSTGRES_DB: users-db
+    extra_hosts:
+      # TRUC CRUCIAL: Asta forțează containerul să știe cine este Windows-ul
+      - "host.docker.internal:host-gateway"
+    command:
+      - "--log.level=DEBUG" # Activăm log-urile detaliate
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.endpoint=tcp://host.docker.internal:2375"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
     ports:
-      - "5433:5432"
+      - "80:80"
+      - "8080:8080"
     networks:
       - demo_net
 
-  devices-db:
-    image: postgres:16
-    container_name: devices-db
-    restart: always
+  # --- FRONTEND ---
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: root
-      POSTGRES_DB: devices-db
-    ports:
-      - "5434:5432"
+      # 🛑 AM SCOS "CHOKIDAR_USEPOLLING=true" - E prea agresiv!
+      # Configurat acum în vite.config.js
+
+      # Păstrăm memoria extinsă, e utilă
+      - NODE_OPTIONS=--max-old-space-size=4096
     networks:
       - demo_net
-
-  auth-db:
-    image: postgres:16
-    container_name: auth-db
-    restart: always
+    depends_on:
+      - api-gateway
+    volumes:
+      - ./frontend:/app
+      # Păstrăm izolarea node_modules
+      - /app/node_modules
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.services.frontend.loadbalancer.server.port=5173"
+      - "traefik.http.routers.frontend.priority=10"
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: root
-      POSTGRES_DB: credentials-db
-    ports:
-      - "5435:5432"
+      - SERVER_PORT=8084
+      - AUTH_BASE_URL=http://auth-service:8080
+      - USERS_BASE_URL=http://users-service:8081
+      - DEVICES_BASE_URL=http://devices-service:8082
     networks:
       - demo_net
+    depends_on:
+      - auth-service
+      - users-service
+      - devices-service
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.gateway.rule=PathPrefix(`/auth`) || PathPrefix(`/users`) || PathPrefix(`/devices`) || PathPrefix(`/api`) || PathPrefix(`/people`)"
+      - "traefik.http.routers.gateway.entrypoints=web"
+      - "traefik.http.services.gateway.loadbalancer.server.port=8084"
+      - "traefik.http.routers.gateway.priority=20"
 
-  # Microservicii
+  # --- MICROSERVICII ---
   users-service:
     build:
       context: ./users-service
       dockerfile: Dockerfile
     container_name: users-service
-    ports:
-      - "8081:8081"
     environment:
       - DB_IP=users-db
       - DB_PORT=5432
@@ -66,8 +95,6 @@ services:
       context: ./devices-service
       dockerfile: Dockerfile
     container_name: devices-service
-    ports:
-      - "8082:8082"
     environment:
       - DB_IP=devices-db
       - DB_PORT=5432
@@ -85,8 +112,6 @@ services:
       context: ./auth-service
       dockerfile: Dockerfile
     container_name: auth-service
-    ports:
-      - "8083:8080" # Mapăm intern 8080 la extern 8083
     environment:
       - DB_IP=auth-db
       - DB_PORT=5432
@@ -99,42 +124,40 @@ services:
     depends_on:
       - auth-db
 
-  api-gateway:
-    build:
-      context: ./api-gateway
-      dockerfile: Dockerfile
-    container_name: api-gateway
-    ports:
-      - "8084:8084"
+  # --- BAZE DE DATE ---
+  users-db:
+    image: postgres:16
+    container_name: users-db
+    restart: always
     environment:
-      - SERVER_PORT=8084
-      - AUTH_BASE_URL=http://auth-service:8080
-      - USERS_BASE_URL=http://users-service:8081
-      - DEVICES_BASE_URL=http://devices-service:8082
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: users-db
     networks:
       - demo_net
-    depends_on:
-      - auth-service
-      - users-service
-      - devices-service
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: frontend
-    ports:
-      - "5173:5173"
+  devices-db:
+    image: postgres:16
+    container_name: devices-db
+    restart: always
     environment:
-      - CHOKIDAR_USEPOLLING=true
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: devices-db
     networks:
       - demo_net
-    depends_on:
-      - api-gateway
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
+
+  auth-db:
+    image: postgres:16
+    container_name: auth-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: credentials-db
+    networks:
+      - demo_net
+
 networks:
   demo_net:
     driver: bridge
-
