@@ -7,6 +7,8 @@ import com.example.auth.entities.Credentials;
 import com.example.auth.handlers.model.ResourceNotFoundException;
 import com.example.auth.repositories.CredentialsRepository;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -17,9 +19,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 @Service
 public class CredentialsService {
     private final CredentialsRepository credentialsRepository;
@@ -27,22 +26,44 @@ public class CredentialsService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CredentialsService.class);
 
-
     public CredentialsService(CredentialsRepository credentialsRepository) {
         this.credentialsRepository = credentialsRepository;
     }
 
+    // --- MODIFICARE: Metoda register suportă acum rolul ---
     @Transactional
-    public Credentials register(String email, String rawPassword) {
+    public Credentials register(String email, String rawPassword, String role) {
         String hash = passwordEncoder.encode(rawPassword);
-        Credentials credentials = new Credentials(email, hash);
+        if (role == null || role.isEmpty()) {
+            role = "CLIENT";
+        }
+        Credentials credentials = new Credentials(email, hash, role);
         return credentialsRepository.save(credentials);
     }
 
+    // Suprascriere pentru compatibilitate cu codul vechi (pune CLIENT implicit)
+    @Transactional
+    public Credentials register(String email, String rawPassword) {
+        return register(email, rawPassword, "CLIENT");
+    }
+
+    // --- MODIFICARE: Metoda LOGIN returnează Optional<Credentials> ---
+    // Aceasta ne permite să accesăm rolul și ID-ul userului în Controller
+    public Optional<Credentials> login(String email, String rawPassword) {
+        Optional<Credentials> userOpt = credentialsRepository.findByEmail(email);
+
+        if (userOpt.isPresent()) {
+            Credentials user = userOpt.get();
+            if (passwordEncoder.matches(rawPassword, user.getPassword())) {
+                return Optional.of(user);
+            }
+        }
+        return Optional.empty();
+    }
+
+    // (Metoda veche verify poate rămâne sau poate fi ștearsă, login() o înlocuiește)
     public boolean verify(String email, String rawPassword) {
-        return credentialsRepository.findByEmail(email)
-                .map(a -> passwordEncoder.matches(rawPassword, a.getPassword()))
-                .orElse(false);
+        return login(email, rawPassword).isPresent();
     }
 
     public List<CredentialsDTO> findCredentials() {
@@ -51,16 +72,7 @@ public class CredentialsService {
                 .map(CredentialsBuilder::toAuthDTO)
                 .collect(Collectors.toList());
     }
-    /*
-    public AuthDetailsDTO findCredentialsById(UUID id) {
-        Optional<Auth> prosumerOptional = authRepository.findById(id);
-        if (prosumerOptional.isEmpty()) {
-            LOGGER.error("Credentials with id {} was not found in db", id);
-            throw new ResourceNotFoundException(Auth.class.getSimpleName() + " with id: " + id);
-        }
-        return AuthBuilder.toAuthDetailsDTO(prosumerOptional.get());
-    }
-    */
+
     public CredentialsDTO findCredentialsById(UUID id) {
         Optional<Credentials> prosumerOptional = credentialsRepository.findById(id);
         if (prosumerOptional.isEmpty()) {
@@ -70,19 +82,6 @@ public class CredentialsService {
         return CredentialsBuilder.toAuthDTO(prosumerOptional.get());
     }
 
-    /*
-    public AuthDetailsDTO findCredentialsByEmail(String email) {
-        if (!authRepository.existsByEmail(email)) {
-            return null;
-        }
-        Optional<Auth> prosumerOptional = authRepository.findByEmail(email);
-        if (prosumerOptional.isEmpty()) {
-            LOGGER.error("Credentials with email {} were not found in db", email);
-            throw new ResourceNotFoundException(Auth.class.getSimpleName() + " with email: " + email);
-        }
-        return AuthBuilder.toAuthDetailsDTO(prosumerOptional.get());
-    }
-    */
     public CredentialsDTO findCredentialsByEmail(String email) {
         if (!credentialsRepository.existsByEmail(email)) {
             return null;

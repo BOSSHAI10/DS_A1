@@ -25,16 +25,9 @@ public class RegisterController {
 
     // 1. Endpoint pentru crearea de Credențiale (folosit de Gateway la înregistrare)
     @PostMapping("/register")
-    public ResponseEntity<Credentials> register(@Valid @RequestBody CredentialsDetailsDTO credentialsDetailsDTO) {
-        return ResponseEntity.ok(credentialsService.register(credentialsDetailsDTO.getEmail(), credentialsDetailsDTO.getPassword()));
+    public ResponseEntity<Credentials> register(@Valid @RequestBody CredentialsDetailsDTO dto) {
+        // --- MODIFICARE: Trimitem și rolul primit din DTO ---
+        return ResponseEntity.ok(credentialsService.register(dto.getEmail(), dto.getPassword(), dto.getRole()));
     }
 
-    // AM COMENTAT SAU ȘTERS CELELALTE METODE CARE CAUZAU CONFLICT (Ambiguous mapping)
-
-    /*
-    @PostMapping("/register/user") // Exemplu: Am schimbat calea dacă vrei să o păstrezi
-    public ResponseEntity<NewUser> registerUser(@Valid @RequestBody NewUserDetailsDTO newUserDetailsDTO) {
-        return ResponseEntity.ok(userService.register(newUserDetailsDTO));
-    }
-    */
 }

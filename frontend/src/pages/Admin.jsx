@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Modal, Button, Form } from 'react-bootstrap';
 import { logout } from '../axios_helper';
 
 export default function Admin() {
+    const navigate = useNavigate();
+
     // --- STĂRI (STATE) ---
     const [users, setUsers] = useState([]);
     const [devices, setDevices] = useState([]);
@@ -28,8 +31,13 @@ export default function Admin() {
 
     // --- INITIALIZARE ---
     useEffect(() => {
-        fetchData();
-    }, []);
+        const token = localStorage.getItem("auth_token");
+        if (!token) {
+            navigate("/login");
+        } else {
+            fetchData();
+        }
+    }, [navigate]);
 
     const fetchData = async () => {
         try {
@@ -39,7 +47,15 @@ export default function Admin() {
             setDevices(dRes.data);
         } catch (e) {
             console.error("Eroare la preluarea datelor:", e);
+            if (e.response && e.response.status === 401) {
+                handleLogout();
+            }
         }
+    };
+
+    const handleLogout = () => {
+        logout();
+        navigate("/login");
     };
 
     // ==============================
@@ -92,7 +108,8 @@ export default function Admin() {
             await axios.post('/devices', {
                 name: newDevice.name,
                 consumption: parseInt(newDevice.consumption),
-                active: true
+                active: true,
+                username: null
             });
             setShowCreateDeviceModal(false);
             fetchData();
@@ -144,30 +161,38 @@ export default function Admin() {
             alert("Actualizat cu succes!");
             fetchData();
             setSelectedUserForDevice(prev => ({...prev, [deviceId]: ""}));
-        } catch (e) { alert("Eroare la mapare."); }
+        } catch (e) {
+            console.error(e);
+            alert("Eroare la mapare.");
+        }
     };
 
-    // --- HELPER PENTRU AFIȘARE STATUS (Funcția care lipsea!) ---
-    const getStatusText = (userId) => {
-        if (!userId) return <span className="text-warning fw-bold">Neatribuit</span>;
+    // --- HELPER STATUS ---
+    const getStatusText = (deviceUsername) => {
+        if (!deviceUsername) return <span className="text-warning fw-bold">Neatribuit</span>;
+        const user = users.find(u => u.email === deviceUsername);
+        const displayName = user ? user.name : deviceUsername;
+        return <span className="text-success fw-bold">Atribuit lui: {displayName}</span>;
+    };
 
-        const user = users.find(u => u.id === userId);
-        const userName = user ? user.name : "Necunoscut";
-
-        return <span className="text-success fw-bold">Atribuit lui: {userName}</span>;
+    // --- STIL COMUN PENTRU CARDURI ---
+    const cardStyle = {
+        border: "2px solid black",
+        boxShadow: "5px 5px 5px black"
     };
 
     return (
         <div className="container mt-5">
             <div className="d-flex justify-content-between align-items-center mb-5">
                 <h1 className="fw-normal">Admin Dashboard</h1>
-                <button className="btn btn-danger px-4" onClick={logout}>Logout</button>
+                <button className="btn btn-danger px-4" onClick={handleLogout}>Logout</button>
             </div>
 
             <div className="row gx-5">
                 {/* === COL 1: UTILIZATORI === */}
-                <div className="col-md-6">
-                    <div className="card shadow-sm border-0 h-100">
+                <div className="col-md-6 mb-4">
+                    {/* AICI AM APLICAT STILUL */}
+                    <div className="card h-100" style={cardStyle}>
                         <div className="card-header bg-light d-flex justify-content-between align-items-center py-3">
                             <h5 className="mb-0 text-secondary">Utilizatori</h5>
                             <button className="btn btn-success btn-sm px-3 fw-bold" onClick={handleCreateUser}>+ Adaugă</button>
@@ -193,8 +218,9 @@ export default function Admin() {
                 </div>
 
                 {/* === COL 2: DISPOZITIVE & MAPARE === */}
-                <div className="col-md-6">
-                    <div className="card shadow-sm border-0 h-100">
+                <div className="col-md-6 mb-4">
+                    {/* AICI AM APLICAT STILUL */}
+                    <div className="card h-100" style={cardStyle}>
                         <div className="card-header bg-light d-flex justify-content-between align-items-center py-3">
                             <h5 className="mb-0 text-secondary">Dispozitive & Mapare</h5>
                             <button className="btn btn-success btn-sm px-3 fw-bold" onClick={() => setShowCreateDeviceModal(true)}>+ Adaugă</button>
@@ -223,15 +249,15 @@ export default function Admin() {
                                         >
                                             <option value="">Schimbă atribuirea...</option>
                                             <option value="unassign" className="text-danger fw-bold">-- Neatribuit --</option>
-                                            {users.filter(u => u.role === 'USER').map(u => (
-                                                <option key={u.id} value={u.id}>{u.name}</option>
+                                            {users.filter(u => u.role === 'USER' || u.role === 'CLIENT').map(u => (
+                                                <option key={u.id} value={u.email}>{u.name}</option>
                                             ))}
                                         </select>
                                         <button className="btn btn-primary btn-sm px-3" onClick={() => handleAssign(d.id)}>Save</button>
                                     </div>
 
                                     <div className="small text-muted">
-                                        Status mapare: {getStatusText(d.userId)}
+                                        {getStatusText(d.username)}
                                     </div>
                                 </div>
                             ))}
@@ -240,9 +266,7 @@ export default function Admin() {
                 </div>
             </div>
 
-            {/* MODALELE (Sunt aceleași, le includ pentru completitudine) */}
-
-            {/* View User */}
+            {/* MODALELE UTILIZATORI */}
             <Modal show={showViewModal} onHide={() => setShowViewModal(false)} centered>
                 <Modal.Header closeButton><Modal.Title>Detalii Utilizator</Modal.Title></Modal.Header>
                 <Modal.Body>
@@ -254,7 +278,6 @@ export default function Admin() {
                 <Modal.Footer><Button variant="secondary" onClick={() => setShowViewModal(false)}>Închide</Button></Modal.Footer>
             </Modal>
 
-            {/* Edit User */}
             <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered>
                 <Modal.Header closeButton><Modal.Title>Modificare Utilizator</Modal.Title></Modal.Header>
                 <Modal.Body>
@@ -286,7 +309,7 @@ export default function Admin() {
                 </Modal.Footer>
             </Modal>
 
-            {/* Create Device */}
+            {/* MODALELE DISPOZITIVE */}
             <Modal show={showCreateDeviceModal} onHide={() => setShowCreateDeviceModal(false)} centered>
                 <Modal.Header closeButton><Modal.Title>Adaugă Dispozitiv</Modal.Title></Modal.Header>
                 <Modal.Body>
@@ -307,7 +330,6 @@ export default function Admin() {
                 </Modal.Footer>
             </Modal>
 
-            {/* View Device */}
             <Modal show={showViewDeviceModal} onHide={() => setShowViewDeviceModal(false)} centered>
                 <Modal.Header closeButton><Modal.Title>Detalii Dispozitiv</Modal.Title></Modal.Header>
                 <Modal.Body>
@@ -319,7 +341,6 @@ export default function Admin() {
                 <Modal.Footer><Button variant="secondary" onClick={() => setShowViewDeviceModal(false)}>Închide</Button></Modal.Footer>
             </Modal>
 
-            {/* Edit Device */}
             <Modal show={showEditDeviceModal} onHide={() => setShowEditDeviceModal(false)} centered>
                 <Modal.Header closeButton><Modal.Title>Modificare Dispozitiv</Modal.Title></Modal.Header>
                 <Modal.Body>

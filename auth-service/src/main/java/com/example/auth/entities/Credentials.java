@@ -16,8 +16,7 @@ import java.util.UUID;
         indexes = {
                 @Index(name = "idx_credentials_email", columnList = "email", unique = true)
         })
-
-public class Credentials implements Serializable{
+public class Credentials implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -28,25 +27,28 @@ public class Credentials implements Serializable{
     @JdbcTypeCode(SqlTypes.UUID)
     private UUID id;
 
-
     @Email
     @NotBlank
     @Size(max = 255)
     @Column(name = "email", nullable = false, length = 255, unique = true)
     private String email;
 
-
     @NotBlank
     @Column(name = "password", nullable = false, columnDefinition = "TEXT")
     private String password;
 
+    // --- MODIFICARE: Adăugat câmpul ROLE ---
+    @Column(name = "role", nullable = false)
+    private String role = "CLIENT"; // Rolul implicit este CLIENT
 
     public Credentials() {
     }
 
-    public Credentials(String email, String password) {
+    // Constructor actualizat să includă și rolul
+    public Credentials(String email, String password, String role) {
         this.email = email;
         this.password = password;
+        this.role = role;
     }
 
     public UUID getId() {
@@ -56,7 +58,6 @@ public class Credentials implements Serializable{
     public void setId(UUID id) {
         this.id = id;
     }
-
 
     public String getEmail() {
         return email;
@@ -72,5 +73,14 @@ public class Credentials implements Serializable{
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    // --- MODIFICARE: Getteri și Setteri pentru Role ---
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 }

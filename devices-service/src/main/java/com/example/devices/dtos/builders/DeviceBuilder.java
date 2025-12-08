@@ -10,17 +10,31 @@ public class DeviceBuilder {
     }
 
     public static DeviceDTO toDeviceDTO(Device device) {
-        // AICI ADĂUGĂM device.getUserId() la final
-        return new DeviceDTO(device.getId(), device.getName(), device.getConsumption(), device.isActive(), device.getUserId());
+        return new DeviceDTO(
+                device.getId(),
+                device.getName(),
+                device.getConsumption(),
+                device.isActive(),
+                device.getUsername()
+        );
     }
 
     public static DeviceDetailsDTO toDeviceDetailsDTO(Device device) {
-        return new DeviceDetailsDTO(device.getId(), device.getName(), device.getConsumption(), device.isActive());
+        // --- MODIFICARE CRITICĂ: Am scos getAddress() și getDescription() ---
+        return new DeviceDetailsDTO(
+                device.getId(),
+                device.getName(),
+                device.getConsumption(),
+                device.isActive(),
+                device.getUsername()
+        );
     }
 
     public static Device toEntity(DeviceDetailsDTO deviceDetailsDTO) {
-        return new Device(deviceDetailsDTO.getName(),
+        return new Device(
+                deviceDetailsDTO.getName(),
                 deviceDetailsDTO.getConsumption(),
-                deviceDetailsDTO.isActive());
+                deviceDetailsDTO.isActive()
+        );
     }
 }

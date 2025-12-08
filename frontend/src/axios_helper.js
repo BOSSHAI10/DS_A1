@@ -1,12 +1,14 @@
 import axios from 'axios';
 
+// Configurare de bază Axios
 axios.defaults.baseURL = 'http://localhost';
 axios.defaults.headers.post['Content-Type'] = 'application/json';
 
+// Interceptor: Adaugă automat token-ul la orice cerere, dacă există
 axios.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem("auth_token");
-        if (token && token !== "mock-token") {
+        if (token) {
             config.headers['Authorization'] = `Bearer ${token}`;
         }
         return config;
@@ -14,35 +16,62 @@ axios.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
+// --- FUNCTIA DE LOGIN (MODIFICATĂ) ---
 export const loginUser = async (email, password) => {
     try {
-        const authResponse = await axios.post('/auth/login', { email, password });
+        // 1. Trimitem cererea de login
+        const response = await axios.post('/auth/login', { email, password });
+        const data = response.data;
 
-        if (authResponse.data === true) {
-            // Cerem detaliile utilizatorului
-            const userResponse = await axios.get(`/people/by-email/${email}`);
-            const user = userResponse.data;
+        // 2. Verificăm dacă am primit token-ul (Backend-ul returnează: {token, role, userId})
+        if (data && data.token) {
 
-            if (!user || !user.role) {
-                throw new Error("Datele utilizatorului sunt incomplete!");
-            }
+            // 3. Salvăm Token-ul
+            setAuthToken(data.token);
 
-            localStorage.setItem("auth_token", "mock-token");
-            localStorage.setItem("user_id", user.id);
-            localStorage.setItem("user_role", user.role);
-            localStorage.setItem("user_name", user.name);
+            // 4. Salvăm detaliile utilizatorului în LocalStorage
+            localStorage.setItem("user_role", data.role);
+            localStorage.setItem("user_id", data.userId);
+
+            // 🔥 LINIA CRITICĂ LIPSĂ: Salvăm email-ul primit ca parametru al funcției
+            localStorage.setItem("user_email", email);
+
+            // (Opțional) Flag de login
             localStorage.setItem("is_logged_in", "true");
 
-            return user;
+            return data;
+
         } else {
-            throw new Error("Credențiale invalide");
+            throw new Error("Răspuns invalid de la server: Lipsă token.");
         }
+
     } catch (error) {
-        throw error;
+        // Gestionăm erorile (ex: 401 Unauthorized)
+        if (error.response && error.response.status === 401) {
+            throw new Error("Credențiale invalide");
+        } else {
+            // Alte erori (ex: server picat, 500, etc.)
+            throw error;
+        }
     }
 };
 
-// Funcție pentru update user (folosită în Admin)
+// --- HELPER PENTRU SALVARE TOKEN ---
+export const setAuthToken = (token) => {
+    if (token) {
+        // Setăm header-ul default pentru Axios
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        // Salvăm în LocalStorage (să reziste la refresh)
+        localStorage.setItem("auth_token", token);
+    } else {
+        delete axios.defaults.headers.common['Authorization'];
+        localStorage.removeItem("auth_token");
+    }
+};
+
+// --- ALTE FUNCȚII UTILE ---
+
+// Funcție pentru update user (folosită în Admin Dashboard)
 export const updateUser = async (id, userData) => {
     try {
         const response = await axios.put(`/people/${id}`, userData);
@@ -52,11 +81,21 @@ export const updateUser = async (id, userData) => {
     }
 };
 
+// Logout: Șterge tot și trimite la pagina de login
 export const logout = () => {
     localStorage.clear();
+    delete axios.defaults.headers.common['Authorization'];
     window.location.href = "/login";
 };
 
+// --- INIȚIALIZARE LA REFRESH ---
+// Dacă dăm refresh la pagină, citim token-ul din storage și îl punem înapoi în Axios
+const savedToken = localStorage.getItem("auth_token");
+if (savedToken) {
+    axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
+}
+
+// Getters simpli pentru componentele React
 export const getRole = () => localStorage.getItem("user_role");
 export const getUserId = () => localStorage.getItem("user_id");
-export const isLoggedIn = () => localStorage.getItem("is_logged_in") === "true";
+export const isLoggedIn = () => localStorage.getItem("auth_token") !== null;

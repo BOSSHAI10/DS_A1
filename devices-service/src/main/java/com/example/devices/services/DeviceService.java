@@ -5,7 +5,7 @@ import com.example.devices.dtos.DeviceDetailsDTO;
 import com.example.devices.dtos.builders.DeviceBuilder;
 import com.example.devices.entities.Device;
 import com.example.devices.repositories.DeviceRepository;
-import com.example.devices.handlers.exceptions.model.ResourceNotFoundException;
+import com.example.devices.handlers.exceptions.model.ResourceNotFoundException; // Asigură-te că importul e corect pentru proiectul tău
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,40 +28,37 @@ public class DeviceService {
     }
 
     public List<DeviceDTO> findDevices() {
-        List<Device> deviceList = deviceRepository.findAll();
-        return deviceList.stream()
+        return deviceRepository.findAll().stream()
                 .map(DeviceBuilder::toDeviceDTO)
                 .collect(Collectors.toList());
     }
 
     public DeviceDetailsDTO findDeviceById(UUID id) {
-        Optional<Device> deviceOptional = deviceRepository.findById(id);
-        if (deviceOptional.isEmpty()) {
-            LOGGER.error("Device with id {} was not found in db", id);
-            throw new ResourceNotFoundException(Device.class.getSimpleName() + " with id: " + id);
+        Optional<Device> device = deviceRepository.findById(id);
+        if (device.isEmpty()) {
+            throw new ResourceNotFoundException("Device not found: " + id);
         }
-        return DeviceBuilder.toDeviceDetailsDTO(deviceOptional.get());
+        return DeviceBuilder.toDeviceDetailsDTO(device.get());
     }
 
     public UUID insert(DeviceDetailsDTO deviceDetailsDTO) {
         Device device = DeviceBuilder.toEntity(deviceDetailsDTO);
         device = deviceRepository.save(device);
-        LOGGER.debug("Device with id {} was inserted in db", device.getId());
         return device.getId();
     }
 
     @Transactional
-    public void assignUser(UUID deviceId, UUID userId) {
+    public void assignUser(UUID deviceId, String username) {
         Device device = deviceRepository.findById(deviceId)
-                .orElseThrow(() -> new ResourceNotFoundException(Device.class.getSimpleName() + " with id: " + deviceId));
+                .orElseThrow(() -> new ResourceNotFoundException("Device not found with id: " + deviceId));
 
-        device.setUserId(userId);
+        device.setUsername(username);
         deviceRepository.save(device);
-        LOGGER.debug("Device with id {} was assigned to user {}", deviceId, userId);
+        LOGGER.info("Device {} assigned to user {}", deviceId, username);
     }
 
-    public List<DeviceDTO> findDevicesByUserId(UUID userId) {
-        return deviceRepository.findByUserId(userId).stream()
+    public List<DeviceDTO> findDevicesByUsername(String username) {
+        return deviceRepository.findByUsername(username).stream()
                 .map(DeviceBuilder::toDeviceDTO)
                 .collect(Collectors.toList());
     }
@@ -69,25 +66,25 @@ public class DeviceService {
     @Transactional
     public void unassignUser(UUID deviceId) {
         Device device = deviceRepository.findById(deviceId)
-                .orElseThrow(() -> new ResourceNotFoundException(Device.class.getSimpleName() + " with id: " + deviceId));
+                .orElseThrow(() -> new ResourceNotFoundException("Device not found with id: " + deviceId));
 
-        device.setUserId(null);
+        device.setUsername(null);
         deviceRepository.save(device);
-        LOGGER.debug("Device with id {} was unassigned", deviceId);
     }
 
     public void delete(UUID id) {
         deviceRepository.deleteById(id);
     }
 
-    public DeviceDetailsDTO update(UUID id, DeviceDetailsDTO deviceDetailsDTO) {
-        Optional<Device> deviceOptional = deviceRepository.findById(id);
-        if (deviceOptional.isEmpty()) {
-            throw new ResourceNotFoundException(Device.class.getSimpleName() + " with id: " + id);
+    public DeviceDetailsDTO update(UUID id, DeviceDetailsDTO dto) {
+        Optional<Device> deviceOpt = deviceRepository.findById(id);
+        if (deviceOpt.isPresent()) {
+            Device device = deviceOpt.get();
+            device.setName(dto.getName());
+            device.setConsumption(dto.getConsumption());
+            device.setActive(dto.isActive());
+            return DeviceBuilder.toDeviceDetailsDTO(deviceRepository.save(device));
         }
-        Device device = deviceOptional.get();
-        device.setName(deviceDetailsDTO.getName());
-        device.setConsumption(deviceDetailsDTO.getConsumption());
-        return DeviceBuilder.toDeviceDetailsDTO(deviceRepository.save(device));
+        throw new ResourceNotFoundException("Device not found");
     }
 }

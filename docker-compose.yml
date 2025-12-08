@@ -1,25 +1,27 @@
-version: '3.8'
 
 services:
   # --- TRAEFIK ---
   traefik:
-    # UPDATED: Folosim v2.11 care este mai stabilă pe Windows
     image: traefik:v2.11
     container_name: traefik
     restart: always
-    extra_hosts:
-      # TRUC CRUCIAL: Asta forțează containerul să știe cine este Windows-ul
-      - "host.docker.internal:host-gateway"
     command:
-      - "--log.level=DEBUG" # Activăm log-urile detaliate
+      - "--log.level=DEBUG"
       - "--api.insecure=true"
       - "--providers.docker=true"
-      - "--providers.docker.endpoint=tcp://host.docker.internal:2375"
+      # AM SCOS linia cu tcp://... și exposedbydefault
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
     ports:
       - "80:80"
       - "8080:8080"
+    # AM SCOS extra_hosts
+
+    # --- LINIA MAGICĂ ---
+    # Asta îi dă voie lui Traefik să "vadă" ce containere rulează
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
     networks:
       - demo_net
 
@@ -29,11 +31,12 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: frontend
-    environment:
-      # 🛑 AM SCOS "CHOKIDAR_USEPOLLING=true" - E prea agresiv!
-      # Configurat acum în vite.config.js
+    stdin_open: true
+    tty: true
 
-      # Păstrăm memoria extinsă, e utilă
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
       - NODE_OPTIONS=--max-old-space-size=4096
     networks:
       - demo_net
@@ -41,7 +44,6 @@ services:
       - api-gateway
     volumes:
       - ./frontend:/app
-      # Păstrăm izolarea node_modules
       - /app/node_modules
     labels:
       - "traefik.enable=true"
@@ -49,6 +51,7 @@ services:
       - "traefik.http.routers.frontend.entrypoints=web"
       - "traefik.http.services.frontend.loadbalancer.server.port=5173"
       - "traefik.http.routers.frontend.priority=10"
+
   api-gateway:
     build:
       context: ./api-gateway
@@ -133,6 +136,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: root
       POSTGRES_DB: users-db
+    ports:
+      - "5433:5432"
     networks:
       - demo_net
 
@@ -144,6 +149,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: root
       POSTGRES_DB: devices-db
+    ports:
+      - "5435:5432"
     networks:
       - demo_net
 
@@ -155,6 +162,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: root
       POSTGRES_DB: credentials-db
+    ports:
+      - "5434:5432"
     networks:
       - demo_net
 

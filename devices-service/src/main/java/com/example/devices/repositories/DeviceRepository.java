@@ -16,5 +16,6 @@ public interface DeviceRepository extends JpaRepository<Device, UUID> {
     @Query(value = "SELECT p FROM devices p WHERE p.consumption > 100")
     Optional<Device> findBigConsumers(@Param("consumption") int consumption);
 
-    List<Device> findByUserId(UUID userId);
+    // --- MODIFICARE: Căutare după username ---
+    List<Device> findByUsername(String username);
 }

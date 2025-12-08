@@ -29,10 +29,9 @@ public class Device implements Serializable {
     @Column(name = "active", nullable = false)
     private boolean active;
 
-    // --- CÂMPUL CRITIC PENTRU MAPARE ---
-    @Column(name = "user_id")
-    @JdbcTypeCode(SqlTypes.UUID)
-    private UUID userId;
+    // --- MODIFICARE: Folosim 'username' (email) în loc de 'user_id' ---
+    @Column(name = "username")
+    private String username;
 
     public Device() {}
 
@@ -42,16 +41,20 @@ public class Device implements Serializable {
         this.active = active;
     }
 
-    // Getters și Setters (inclusiv pentru userId)
+    // Getters și Setters
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
+
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+
     public Integer getConsumption() { return consumption; }
     public void setConsumption(Integer consumption) { this.consumption = consumption; }
+
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
 
-    public UUID getUserId() { return userId; }
-    public void setUserId(UUID userId) { this.userId = userId; }
+    // --- Getters/Setters Noi pentru Username ---
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
 }

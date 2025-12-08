@@ -12,7 +12,7 @@ export default defineConfig({
         watch: {
             usePolling: true,
             interval: 1000,
-            binaryInterval: 300,
+            binaryInterval: 1000,
             ignored: ['**/node_modules/**', '**/.git/**', '**/dist/**', '**/vite.config.js']
         },
         // --- CONFIGURARE HMR OPTIMIZATĂ PENTRU TRAEFIK ---

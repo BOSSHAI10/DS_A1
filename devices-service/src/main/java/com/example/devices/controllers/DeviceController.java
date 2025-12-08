@@ -37,7 +37,7 @@ public class DeviceController {
                 .path("/{id}")
                 .buildAndExpand(id)
                 .toUri();
-        return ResponseEntity.created(location).build(); // 201 + Location header
+        return ResponseEntity.created(location).build();
     }
 
     @GetMapping("/{id}")
@@ -45,15 +45,17 @@ public class DeviceController {
         return ResponseEntity.ok(deviceService.findDeviceById(id));
     }
 
-    @PostMapping("/{id}/assign/{userId}")
-    public ResponseEntity<Void> assignDevice(@PathVariable UUID id, @PathVariable UUID userId) {
-        deviceService.assignUser(id, userId);
+    // --- MODIFICARE 1: Atribuire prin EMAIL (String), nu ID ---
+    @PostMapping("/{id}/assign/{username}")
+    public ResponseEntity<Void> assignDevice(@PathVariable UUID id, @PathVariable String username) {
+        deviceService.assignUser(id, username); // Metoda trebuie actualizată și în Service!
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<DeviceDTO>> getDevicesByUser(@PathVariable UUID userId) {
-        return ResponseEntity.ok(deviceService.findDevicesByUserId(userId));
+    // --- MODIFICARE 2: Căutare prin EMAIL (String), nu ID ---
+    @GetMapping("/user/{username}")
+    public ResponseEntity<List<DeviceDTO>> getDevicesByUser(@PathVariable String username) {
+        return ResponseEntity.ok(deviceService.findDevicesByUsername(username)); // Metoda trebuie actualizată și în Service!
     }
 
     @PostMapping("/{id}/unassign")
