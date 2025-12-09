@@ -70,7 +70,7 @@ services:
       - devices-service
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.gateway.rule=PathPrefix(`/auth`) || PathPrefix(`/users`) || PathPrefix(`/devices`) || PathPrefix(`/api`) || PathPrefix(`/people`)"
+      - "traefik.http.routers.gateway.rule=PathPrefix(`/auth`) || PathPrefix(`/users`) || PathPrefix(`/devices`) || PathPrefix(`/api`) || PathPrefix(`/people`) || PathPrefix(`/swagger-ui.html`) || PathPrefix(`/webjars`) || PathPrefix(`/v3/api-docs`)"
       - "traefik.http.routers.gateway.entrypoints=web"
       - "traefik.http.services.gateway.loadbalancer.server.port=8084"
       - "traefik.http.routers.gateway.priority=20"
