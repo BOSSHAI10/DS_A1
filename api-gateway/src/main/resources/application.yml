@@ -28,6 +28,28 @@ spring:
           predicates:
             - Path=/devices/**
 
+              # --- Add these routes for Swagger Documentation ---
+        - id: openapi-auth
+          uri: http://auth-service:8082
+          predicates:
+            - Path=/v3/api-docs/auth-service
+          filters:
+            - RewritePath=/v3/api-docs/auth-service, /v3/api-docs
+
+        - id: openapi-users
+          uri: http://users-service:8081
+          predicates:
+            - Path=/v3/api-docs/users-service
+          filters:
+            - RewritePath=/v3/api-docs/users-service, /v3/api-docs
+
+        - id: openapi-devices
+          uri: http://devices-service:8083
+          predicates:
+            - Path=/v3/api-docs/devices-service
+          filters:
+            - RewritePath=/v3/api-docs/devices-service, /v3/api-docs
+
       # Configurare CORS globală (pentru React)
       globalcors:
         cors-configurations:
