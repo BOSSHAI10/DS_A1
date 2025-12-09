@@ -4,9 +4,7 @@ import com.example.users.dtos.UserDTO;
 import com.example.users.dtos.UserDetailsDTO;
 import com.example.users.dtos.UserDetailsPatchDTO;
 import com.example.users.services.UserService;
-import com.zaxxer.hikari.HikariConfig;
 import jakarta.validation.Valid;
-import jakarta.validation.Validator;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -30,11 +28,26 @@ public class UserController {
         this.userService = userService;
     }
 
+    // --- 1. GET ALL USERS ---
     @GetMapping
     public ResponseEntity<List<UserDTO>> getPeople() {
         return ResponseEntity.ok(userService.findUsers());
     }
 
+    // --- 2. GET USER BY ID ---
+    @GetMapping("/{id}")
+    public ResponseEntity<UserDetailsDTO> getUser(@PathVariable UUID id) {
+        return ResponseEntity.ok(userService.findUserById(id));
+    }
+
+    // --- 3. GET USER BY EMAIL (Endpoint-ul necesar pentru Client Dashboard) ---
+    @GetMapping("/by-email/{email}")
+    public ResponseEntity<UserDetailsDTO> getUserByEmail(@PathVariable String email) {
+        // Acest apel returnează UserDetailsDTO care conține și câmpul 'name'
+        return ResponseEntity.ok(userService.findUserByEmail(email));
+    }
+
+    // --- 4. CREATE USER (ADMIN ONLY) ---
     @PostMapping
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Void> create(@Valid @RequestBody UserDetailsDTO user) {
@@ -44,89 +57,56 @@ public class UserController {
                 .path("/{id}")
                 .buildAndExpand(id)
                 .toUri();
-        return ResponseEntity.created(location).build(); // 201 + Location header
+        return ResponseEntity.created(location).build();
     }
 
-
+    // --- 5. UPDATE USER (ADMIN ONLY) ---
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<UserDetailsDTO> update(@PathVariable UUID id, @Valid @RequestBody UserDetailsDTO user) {
-
-        // (opțional) verificare consistență: dacă DTO are câmp id, să fie egal cu path id
-        // if (user.getId() != null && !user.getId().equals(id)) {
-        //     return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        // }
-
-        boolean exists = userService.existsById(id);
-        if (!exists) {
-            return ResponseEntity.notFound().build(); // 404
+        if (!userService.existsById(id)) {
+            return ResponseEntity.notFound().build();
         }
-
         try {
-            // înlocuiește complet resursa
-            return ResponseEntity.ok(userService.updateFully(id, user)); // 200 + body
-
+            return ResponseEntity.ok(userService.updateFully(id, user));
         } catch (Exception ex) {
             System.err.println(ex.getMessage());
-            return ResponseEntity.status(HttpStatus.CONFLICT).build(); // 409
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
     }
 
+    // --- 6. PARTIAL UPDATE (PATCH) ---
     @PatchMapping("/{id}")
     @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<Void> partialUpdate(
-            @PathVariable UUID id,
-            @RequestBody UserDetailsPatchDTO patchDto) {
-
-        boolean exists = userService.existsById(id);
-
-        if (!exists) {
+    public ResponseEntity<Void> partialUpdate(@PathVariable UUID id, @RequestBody UserDetailsPatchDTO patchDto) {
+        if (!userService.existsById(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
         UserDetailsDTO existing = userService.findUserById(id);
 
-        // "merge" manual: doar câmpurile nenule din patch suprascriu
-        if (patchDto.getName() != null)
-            existing.setName(patchDto.getName());
-        if (patchDto.getEmail() != null)
-            existing.setEmail(patchDto.getEmail());
-        if (patchDto.getAge() != null)
-            existing.setAge(patchDto.getAge());
-        if (patchDto.getRole() != null)
-            existing.setRole(patchDto.getRole());
+        if (patchDto.getName() != null) existing.setName(patchDto.getName());
+        if (patchDto.getEmail() != null) existing.setEmail(patchDto.getEmail());
+        if (patchDto.getAge() != null) existing.setAge(patchDto.getAge());
+        if (patchDto.getRole() != null) existing.setRole(patchDto.getRole());
 
         userService.updateFully(id, existing);
         return ResponseEntity.noContent().build();
     }
 
-
+    // --- 7. DELETE USER (ADMIN ONLY) ---
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
-
-        boolean exists = userService.existsById(id);
-        if (!exists) {
-            return ResponseEntity.notFound().build(); // 404
+        if (!userService.existsById(id)) {
+            return ResponseEntity.notFound().build();
         }
-
         try {
             userService.remove(id);
-            return ResponseEntity.noContent().build(); // 204
+            return ResponseEntity.noContent().build();
         } catch (Exception ex) {
             System.err.println(ex.getMessage());
-            return ResponseEntity.status(HttpStatus.CONFLICT).build(); // 409
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
-    }
-
-
-    @GetMapping("/{id}") ///  read by id
-    public ResponseEntity<UserDetailsDTO> getUser(@PathVariable UUID id) {
-        return ResponseEntity.ok(userService.findUserById(id));
-    }
-
-    @GetMapping("/by-email/{email}")
-    public ResponseEntity<UserDetailsDTO> getUserByEmail(@PathVariable String email) {
-        return ResponseEntity.ok(userService.findUserByEmail(email));
     }
 }

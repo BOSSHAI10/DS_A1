@@ -20,7 +20,6 @@ public class DeviceBuilder {
     }
 
     public static DeviceDetailsDTO toDeviceDetailsDTO(Device device) {
-        // --- MODIFICARE CRITICĂ: Am scos getAddress() și getDescription() ---
         return new DeviceDetailsDTO(
                 device.getId(),
                 device.getName(),
@@ -31,10 +30,17 @@ public class DeviceBuilder {
     }
 
     public static Device toEntity(DeviceDetailsDTO deviceDetailsDTO) {
-        return new Device(
+        // 1. Creăm entitatea cu datele de bază
+        Device device = new Device(
                 deviceDetailsDTO.getName(),
                 deviceDetailsDTO.getConsumption(),
                 deviceDetailsDTO.isActive()
         );
+
+        // 2. --- MODIFICARE CRITICĂ PENTRU RESTORE ---
+        // Setăm și username-ul (email-ul proprietarului) dacă există în DTO
+        device.setUsername(deviceDetailsDTO.getUsername());
+
+        return device;
     }
 }
