@@ -18,6 +18,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Permitem acces liber (public) la tot ce începe cu /auth/
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers(
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html"
+                        ).permitAll()
                         // Orice altceva necesită autentificare (deși nu ai alte endpoint-uri aici)
                         .anyRequest().authenticated()
                 );
