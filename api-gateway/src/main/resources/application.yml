@@ -42,6 +42,19 @@ spring:
               - PATCH
             allowedHeaders: "*"
 
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: auth-service
+        url: /v3/api-docs/auth-service
+      - name: users-service
+        url: /v3/api-docs/users-service
+      - name: devices-service
+        url: /v3/api-docs/devices-service
+  api-docs:
+    path: /v3/api-docs
+
 # Configurare Log-uri (te ajută să vezi rutele)
 logging:
   level:
