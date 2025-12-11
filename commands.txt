@@ -3,7 +3,7 @@ Creare Login (Auth) Admin:
 Invoke-RestMethod -Uri "http://localhost:8084/auth/register" `
   -Method Post `
   -ContentType "application/json" `
-  -Body '{"email": "admin@test.com", "password": "root"}'
+  -Body '{"email": "admin@test.com", "password": "root", "role":"ADMIN"}'
 
 Creare Profil Admin (Users):
 

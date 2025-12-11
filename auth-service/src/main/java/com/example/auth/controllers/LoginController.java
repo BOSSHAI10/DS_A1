@@ -37,6 +37,7 @@ public class LoginController {
             response.put("userId", user.getId());
             // Token JWT valid hardcodat (pentru moment)
             response.put("token", "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkB0ZXN0LmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTUxNjIzOTAyMn0.OCPCKq8j8y5Q5j0j9o9y9q9y9q9y9q9y9q9y9q9y9q9");
+            // trebuie de generat pentru fiecare user/login un token diferit
 
             return ResponseEntity.ok(response);
         } else {

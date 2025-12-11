@@ -39,7 +39,7 @@ public class Credentials implements Serializable {
 
     // --- MODIFICARE: Adăugat câmpul ROLE ---
     @Column(name = "role", nullable = false)
-    private String role = "CLIENT"; // Rolul implicit este CLIENT
+    private String role = "USER"; // Rolul implicit este CLIENT
 
     public Credentials() {
     }

@@ -59,9 +59,11 @@ services:
     container_name: api-gateway
     environment:
       - SERVER_PORT=8084
-      - AUTH_BASE_URL=http://auth-service:8080
+      - AUTH_BASE_URL=http://auth-service:8083
       - USERS_BASE_URL=http://users-service:8081
       - DEVICES_BASE_URL=http://devices-service:8082
+    ports: # <--- ADAUGĂ ACEASTA SECȚIUNE
+      - "8084:8084"        # <--- Mapează portul 8084
     networks:
       - demo_net
     depends_on:
@@ -121,7 +123,7 @@ services:
       - DB_DBNAME=credentials-db
       - DB_USER=postgres
       - DB_PASSWORD=root
-      - PORT=8080
+      - PORT=8083
     networks:
       - demo_net
     depends_on:

@@ -82,7 +82,7 @@ public class UserService {
         // 3. SINCRONIZARE CU AUTH SERVICE
         // Trimitem un request HTTP către Auth pentru a crea contul de login
         try {
-            String authUrl = "http://auth-service:8080/auth/register";
+            String authUrl = "http://auth-service:8083/auth/register";
 
             // --- MODIFICARE AICI: Convertim Enum-ul în String ---
             // Verificăm dacă getRole() returnează null, altfel luăm .name()
